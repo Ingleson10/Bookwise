@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model agendamento {
+  CodAge            Int           @id
+  DatHor            DateTime      @db.DateTime(0)
+  Status            String?       @db.VarChar(45)
+  Cliente_CodCli    Int
+  Atendentes_CodAte Int
+  Servicos_CodSer   Int
+  atendentes        atendentes    @relation(fields: [Atendentes_CodAte], references: [CodAte], onDelete: NoAction, onUpdate: NoAction, map: "fk_Agendamento_Atendentes1")
+  cliente           cliente       @relation(fields: [Cliente_CodCli], references: [CodCli], onDelete: NoAction, onUpdate: NoAction, map: "fk_Agendamento_Cliente1")
+  servicos          servicos      @relation(fields: [Servicos_CodSer], references: [CodSer], onDelete: NoAction, onUpdate: NoAction, map: "fk_Agendamento_Servicos1")
+  apontamento       apontamento[]
+  notificacao       notificacao[]
+
+  @@index([Atendentes_CodAte], map: "fk_Agendamento_Atendentes1_idx")
+  @@index([Cliente_CodCli], map: "fk_Agendamento_Cliente1_idx")
+  @@index([Servicos_CodSer], map: "fk_Agendamento_Servicos1_idx")
+}
+
+model apontamento {
+  CodApo             Int         @id
+  DatApo             DateTime    @db.DateTime(0)
+  Observacoes        String?     @db.VarChar(45)
+  Agendamento_CodAge Int
+  agendamento        agendamento @relation(fields: [Agendamento_CodAge], references: [CodAge], onDelete: NoAction, onUpdate: NoAction, map: "fk_Apontamento_Agendamento1")
+
+  @@index([Agendamento_CodAge], map: "fk_Apontamento_Agendamento1_idx")
+}
+
+model atendentes {
+  CodAte         Int            @id
+  NomAte         String         @db.VarChar(45)
+  EmaAte         String?        @db.VarChar(45)
+  TelAte         String?        @db.VarChar(15)
+  Empresa_CodEmp Int
+  agendamento    agendamento[]
+  empresa        empresa        @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Atendentes_Empresa1")
+  lista_espera   lista_espera[]
+
+  @@index([Empresa_CodEmp], map: "fk_Atendentes_Empresa1_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model cliente {
+  CodCli          Int           @id
+  NomCli          String        @db.VarChar(100)
+  EmaCli          String?       @db.VarChar(45)
+  TelCli          String?       @db.VarChar(15)
+  DatCad          DateTime?     @db.DateTime(0)
+  Empresa_CodEmp  Int
+  LogEnd          String?       @db.VarChar(100)
+  NumEnd          Int?
+  BaiEnd          String?       @db.VarChar(45)
+  CidEnd          String?       @db.VarChar(45)
+  EstEnd          String?       @db.VarChar(2)
+  Endereco_CodCep Int
+  agendamento     agendamento[]
+  empresa         empresa       @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Cliente_Empresa1")
+  endereco        endereco      @relation(fields: [Endereco_CodCep], references: [CodCep], onDelete: NoAction, onUpdate: NoAction, map: "fk_Cliente_Endereco1")
+
+  @@index([Empresa_CodEmp], map: "fk_Cliente_Empresa1_idx")
+  @@index([Endereco_CodCep], map: "fk_Cliente_Endereco1_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model configuracao_empresa {
+  CodCon         Int       @id
+  cod_fus        String    @db.VarChar(45)
+  MaxAge         String    @db.VarChar(45)
+  DiaUte         String?   @db.VarChar(45)
+  HorIni         DateTime? @db.DateTime(0)
+  HorFim         DateTime? @db.DateTime(0)
+  EnvNot         String?   @db.VarChar(45)
+  Empresa_CodEmp Int
+  RelApo         String    @db.VarChar(45)
+  empresa        empresa   @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Configuracao_empresa_Empresa1")
+
+  @@index([Empresa_CodEmp], map: "fk_Configuracao_empresa_Empresa1_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model empresa {
+  CodEmp                 Int                      @id @default(autoincrement()) @unique
+  NomEmp                 String                   @db.VarChar(100)
+  NomRam                 String?                  @db.VarChar(100)
+  CpfCnp                 String                   @db.VarChar(14) @unique
+  LogEnd                 String?                  @db.VarChar(100)
+  NumEnd                 Int?
+  BaiEnd                 String?                  @db.VarChar(45)
+  CidEnd                 String?                  @db.VarChar(45)
+  EstEnd                 String?                  @db.VarChar(2)
+  TelEmp                 String                   @db.VarChar(15)
+  AdmEmp                 String                   @db.VarChar(45)
+  TelAdm                 String?                  @db.VarChar(15)
+  Endereco_CodCep        Int
+  TipEmp                 String?                  @db.VarChar(1)
+  atendentes             atendentes[]
+  cliente                cliente[]
+  configuracao_empresa   configuracao_empresa[]
+  endereco               endereco                 @relation(fields: [Endereco_CodCep], references: [CodCep], onDelete: NoAction, onUpdate: NoAction, map: "fk_Empresa_Endereco1")
+  estoque                estoque[]
+  fornecedor             fornecedor[]
+  grupo_usuario          grupo_usuario[]
+  item_pedido_fornecedor item_pedido_fornecedor[]
+  movimentacao_estoque   movimentacao_estoque[]
+  pedido_fornecedor      pedido_fornecedor[]
+  permissao              permissao[]
+  produtos               produtos[]
+  servicos               servicos[]
+  tipo_servicos          tipo_servicos[]
+  usuarios               usuarios[]
+
+  @@index([Endereco_CodCep], map: "fk_Empresa_Endereco1_idx")
+}
+
+model endereco {
+  CodCep     Int          @id
+  LogEnd     String?      @db.VarChar(100)
+  BaiEnd     String?      @db.VarChar(45)
+  CidEnd     String?      @db.VarChar(45)
+  EstEnd     String?      @db.VarChar(2)
+  PaiEnd     String?      @db.VarChar(45)
+  cliente    cliente[]
+  empresa    empresa[]
+  fornecedor fornecedor[]
+}
+
+model estoque {
+  CodEst               Int                    @id
+  QtdEst               Decimal?               @db.Decimal(5, 2)
+  LocEst               String?                @db.VarChar(45)
+  Empresa_CodEmp       Int
+  Produtos_CodPro      Int
+  empresa              empresa                @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Estoque_Empresa1")
+  produtos             produtos               @relation(fields: [Produtos_CodPro], references: [CodPro], onDelete: NoAction, onUpdate: NoAction, map: "fk_Estoque_Produtos1")
+  movimentacao_estoque movimentacao_estoque[]
+
+  @@index([Empresa_CodEmp], map: "fk_Estoque_Empresa1_idx")
+  @@index([Produtos_CodPro], map: "fk_Estoque_Produtos1_idx")
+}
+
+model fornecedor {
+  CodFor            Int                 @id
+  NomFor            String              @db.VarChar(100)
+  TelFor            String?             @db.VarChar(15)
+  EmaFor            String?             @db.VarChar(100)
+  Empresa_CodEmp    Int
+  LogEnd            String?             @db.VarChar(100)
+  NumEnd            Int?
+  BaiEnd            String?             @db.VarChar(45)
+  CidEnd            String?             @db.VarChar(45)
+  EstEnd            String?             @db.VarChar(2)
+  Endereco_CodCep   Int
+  empresa           empresa             @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Fornecedor_Empresa1")
+  endereco          endereco            @relation(fields: [Endereco_CodCep], references: [CodCep], onDelete: NoAction, onUpdate: NoAction, map: "fk_Fornecedor_Endereco1")
+  pedido_fornecedor pedido_fornecedor[]
+
+  @@index([Empresa_CodEmp], map: "fk_Fornecedor_Empresa1_idx")
+  @@index([Endereco_CodCep], map: "fk_Fornecedor_Endereco1_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model grupo_usuario {
+  CodGru         Int         @id @default(autoincrement())
+  NomGru         String      @db.VarChar(45)
+  DesGru         String?     @db.VarChar(45)
+  Empresa_CodEmp Int
+  empresa        empresa     @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Grupo_usuario_Empresa1")
+  permissao      permissao[]
+  usuarios       usuarios[]
+
+  @@index([Empresa_CodEmp], map: "fk_Grupo_usuario_Empresa1_idx")
+}
+
+model item_pedido_fornecedor {
+  CodIpf                   Int               @id
+  QtdIpf                   Int?
+  PreUni                   Decimal?          @db.Decimal(10, 2)
+  Produtos_CodPro          Int
+  Pedido_Fornecedor_CodPef Int
+  Empresa_CodEmp           Int
+  empresa                  empresa           @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Item_Pedido_Fornecedor_Empresa1")
+  pedido_fornecedor        pedido_fornecedor @relation(fields: [Pedido_Fornecedor_CodPef], references: [CodPef], onDelete: NoAction, onUpdate: NoAction, map: "fk_Item_Pedido_Fornecedor_Pedido_Fornecedor1")
+  produtos                 produtos          @relation(fields: [Produtos_CodPro], references: [CodPro], onDelete: NoAction, onUpdate: NoAction, map: "fk_Item_Pedido_Fornecedor_Produtos1")
+
+  @@index([Empresa_CodEmp], map: "fk_Item_Pedido_Fornecedor_Empresa1_idx")
+  @@index([Pedido_Fornecedor_CodPef], map: "fk_Item_Pedido_Fornecedor_Pedido_Fornecedor1_idx")
+  @@index([Produtos_CodPro], map: "fk_Item_Pedido_Fornecedor_Produtos1_idx")
+}
+
+model lista_espera {
+  CodEsp            Int        @id
+  DatEsp            DateTime?  @db.DateTime(0)
+  Servicos_CodSer   Int
+  Atendentes_CodAte Int
+  atendentes        atendentes @relation(fields: [Atendentes_CodAte], references: [CodAte], onDelete: NoAction, onUpdate: NoAction, map: "fk_Lista_Espera_Atendentes1")
+  servicos          servicos   @relation(fields: [Servicos_CodSer], references: [CodSer], onDelete: NoAction, onUpdate: NoAction, map: "fk_Lista_Espera_Servicos1")
+
+  @@index([Atendentes_CodAte], map: "fk_Lista_Espera_Atendentes1_idx")
+  @@index([Servicos_CodSer], map: "fk_Lista_Espera_Servicos1_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model movimentacao_estoque {
+  CodMov         Int       @id
+  TipMov         String?   @db.VarChar(1)
+  QtdMov         Decimal?  @db.Decimal(5, 2)
+  DatMov         DateTime? @db.DateTime(0)
+  ObsMov         String?   @db.VarChar(45)
+  Estoque_CodEst Int
+  Empresa_CodEmp Int
+  empresa        empresa   @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Movimentacao_Estoque_Empresa1")
+  estoque        estoque   @relation(fields: [Estoque_CodEst], references: [CodEst], onDelete: NoAction, onUpdate: NoAction, map: "fk_Movimentacao_Estoque_Estoque1")
+
+  @@index([Empresa_CodEmp], map: "fk_Movimentacao_Estoque_Empresa1_idx")
+  @@index([Estoque_CodEst], map: "fk_Movimentacao_Estoque_Estoque1_idx")
+}
+
+model notificacao {
+  CodNot             Int         @id
+  DatNot             DateTime    @db.DateTime(0)
+  StaNot             String      @db.VarChar(1)
+  MenNot             String?     @db.VarChar(200)
+  Agendamento_CodAge Int
+  SeqNot             Int
+  agendamento        agendamento @relation(fields: [Agendamento_CodAge], references: [CodAge], onDelete: NoAction, onUpdate: NoAction, map: "fk_Notificacao_Agendamento1")
+
+  @@index([Agendamento_CodAge], map: "fk_Notificacao_Agendamento1_idx")
+}
+
+model pedido_fornecedor {
+  CodPef                 Int                      @id
+  DatPed                 DateTime                 @db.DateTime(0)
+  Status                 String                   @db.VarChar(45)
+  Fornecedor_CodFor      Int
+  Empresa_CodEmp         Int
+  item_pedido_fornecedor item_pedido_fornecedor[]
+  empresa                empresa                  @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Pedido-Fornecedor_Empresa1")
+  fornecedor             fornecedor               @relation(fields: [Fornecedor_CodFor], references: [CodFor], onDelete: NoAction, onUpdate: NoAction, map: "fk_Pedido-Fornecedor_Fornecedor1")
+
+  @@index([Empresa_CodEmp], map: "fk_Pedido-Fornecedor_Empresa1_idx")
+  @@index([Fornecedor_CodFor], map: "fk_Pedido-Fornecedor_Fornecedor1_idx")
+}
+
+model permissao {
+  CodPer               Int           @id
+  DesPer               String        @db.VarChar(45)
+  Grupo_usuario_CodGru Int
+  Empresa_CodEmp       Int
+  empresa              empresa       @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Permissao_Empresa1")
+  grupo_usuario        grupo_usuario @relation(fields: [Grupo_usuario_CodGru], references: [CodGru], onDelete: NoAction, onUpdate: NoAction, map: "fk_Permissao_Grupo_usuario")
+
+  @@index([Empresa_CodEmp], map: "fk_Permissao_Empresa1_idx")
+  @@index([Grupo_usuario_CodGru], map: "fk_Permissao_Grupo_usuario_idx")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model produtos {
+  CodPro                 Int                      @id
+  NomPro                 String                   @db.VarChar(45)
+  DesPro                 String?                  @db.VarChar(45)
+  PreUni                 Decimal?                 @db.Decimal(10, 2)
+  Empresa_CodEmp         Int
+  estoque                estoque[]
+  item_pedido_fornecedor item_pedido_fornecedor[]
+  empresa                empresa                  @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Produtos_Empresa1")
+
+  @@index([Empresa_CodEmp], map: "fk_Produtos_Empresa1_idx")
+}
+
+model servicos {
+  CodSer               Int            @id
+  NomSer               String         @db.VarChar(45)
+  DesSer               String?        @db.VarChar(45)
+  Preuni               Decimal?       @db.Decimal(10, 2)
+  Tipo_Servicos_Codtip Int
+  Empresa_CodEmp       Int
+  agendamento          agendamento[]
+  lista_espera         lista_espera[]
+  empresa              empresa        @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Servicos_Empresa1")
+  tipo_servicos        tipo_servicos  @relation(fields: [Tipo_Servicos_Codtip], references: [Codtip], onDelete: NoAction, onUpdate: NoAction, map: "fk_Servicos_Tipo_Servicos1")
+
+  @@index([Empresa_CodEmp], map: "fk_Servicos_Empresa1_idx")
+  @@index([Tipo_Servicos_Codtip], map: "fk_Servicos_Tipo_Servicos1_idx")
+}
+
+model tipo_servicos {
+  Codtip         Int        @id
+  NomTip         String     @db.VarChar(45)
+  DesTip         String?    @db.VarChar(45)
+  Empresa_CodEmp Int
+  servicos       servicos[]
+  empresa        empresa    @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Tipo_Servicos_Empresa1")
+
+  @@index([Empresa_CodEmp], map: "fk_Tipo_Servicos_Empresa1_idx")
+}
+
+model usuarios {
+  Codusu               Int           @id @default(autoincrement())
+  Nomusu               String        @db.VarChar(100)
+  DesEma               String?       @db.VarChar(100)
+  CodSen               String        @db.VarChar(45)
+  Grupo_usuario_CodGru Int
+  Empresa_CodEmp       Int
+  empresa              empresa       @relation(fields: [Empresa_CodEmp], references: [CodEmp], onDelete: NoAction, onUpdate: NoAction, map: "fk_Usuarios_Empresa1")
+  grupo_usuario        grupo_usuario @relation(fields: [Grupo_usuario_CodGru], references: [CodGru], onDelete: NoAction, onUpdate: NoAction, map: "fk_Usuarios_Grupo_usuario1")
+
+  @@index([Empresa_CodEmp], map: "fk_Usuarios_Empresa1_idx")
+  @@index([Grupo_usuario_CodGru], map: "fk_Usuarios_Grupo_usuario1_idx")
+}
